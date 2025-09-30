@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1f2937">
+    <title>Consulta de Aulas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result.ocupada {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+        }
+        
+        .result.libre {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+        }
+        
+        .result-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result.ocupada .result-title {
+            color: #dc2626;
+        }
+        
+        .result.libre .result-title {
+            color: #059669;
+        }
+        
+        .result-info {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #374151;
+        }
+        
+        .result-info strong {
+            color: #1f2937;
+            display: inline-block;
+            min-width: 80px;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loader.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .time-info {
+            text-align: center;
+            margin-top: 20px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        .error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏫 Consulta de Aulas</h1>
+        <p class="subtitle">Verifica disponibilidad en tiempo real</p>
+        
+        <div class="input-group">
+            <label for="aulaInput">Código del Aula</label>
+            <input 
+                type="text" 
+                id="aulaInput" 
+                placeholder="Ej: U105, B006, P001"
+                autocomplete="off"
+            >
+        </div>
+        
+        <button onclick="consultarAula()">🔍 Consultar Ahora</button>
+        
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #6b7280;">Consultando...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        <div class="error" id="error"></div>
+        
+        <div class="time-info" id="timeInfo"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxj6H-1bSKYdClBPkS59zNR4OSn0YjtFcTW71rnxs5KPajf4agTdTPCiuWiEyyWHBFt/exec';
+        
+        function actualizarHora() {
+            const ahora = new Date();
+            const opciones = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('timeInfo').textContent = 
+                ahora.toLocaleDateString('es-AR', opciones);
+        }
+        
+        setInterval(actualizarHora, 1000);
+        actualizarHora();
+        
+        document.getElementById('aulaInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') consultarAula();
+        });
+        
+        async function consultarAula() {
+            const aulaInput = document.getElementById('aulaInput').value.trim().toUpperCase();
+            const loader = document.getElementById('loader');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            
+            result.style.display = 'none';
+            error.style.display = 'none';
+            
+            if (!aulaInput) {
+                mostrarError('Por favor ingresa un código de aula');
+                return;
+            }
+            
+            loader.classList.add('active');
+            
+            try {
+                const url = `${API_URL}?aula=${encodeURIComponent(aulaInput)}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}`);
+                }
+                
+                const datos = await response.json();
+                
+                if (datos.error) {
+                    mostrarError(datos.mensaje);
+                    return;
+                }
+                
+                if (datos.ocupada) {
+                    mostrarResultado(true, {
+                        aula: datos.aula,
+                        horario: datos.horario,
+                        materia: datos.materia,
+                        docente: datos.docente
+                    });
+                } else {
+                    mostrarResultado(false, { aula: datos.aula });
+                }
+                
+            } catch (err) {
+                mostrarError(`Error al consultar: ${err.message}`);
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        function mostrarResultado(ocupada, datos) {
+            const result = document.getElementById('result');
+            result.className = 'result ' + (ocupada ? 'ocupada' : 'libre');
+            
+            if (ocupada) {
+                result.innerHTML = `
+                    <div class="result-title">
+                        🔴 AULA OCUPADA
+                    </div>
+                    <div class="result-info">
+                        <strong>Aula:</strong> ${datos.aula}<br>
+                        <strong>Horario:</strong> ${datos.horario}<br>
+                        <strong>Materia:</strong> ${datos.materia}<br>
+                        <strong>Docente:</strong> ${datos.docente}
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div class="result-title">
+                        ✅ AULA DISPONIBLE
+                    </div>
+                    <div class="result-info">
+                        El aula <strong>${datos.aula}</strong> está libre en este momento
+                    </div>
+                `;
+            }
+            
+            result.style.display = 'block';
+        }
+        
+        function mostrarError(mensaje) {
+            const error = document.getElementById('error');
+            error.textContent = '⚠️ ' + mensaje;
+            error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
