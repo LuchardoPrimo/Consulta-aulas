@@ -196,12 +196,26 @@
             margin-top: 20px;
             display: none;
         }
+
+        .info-box {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1e40af;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🏫 Consulta de Aulas</h1>
         <p class="subtitle">Verifica disponibilidad en tiempo real</p>
+        
+        <div class="info-box">
+            💡 <strong>Importante:</strong> Guarda esta página (Archivo → Guardar como) o ábrela desde tu dispositivo para que funcione correctamente.
+        </div>
         
         <div class="input-group">
             <label for="aulaInput">Código del Aula</label>
@@ -229,6 +243,7 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxj6H-1bSKYdClBPkS59zNR4OSn0YjtFcTW71rnxs5KPajf4agTdTPCiuWiEyyWHBFt/exec';
         
+        // Actualizar hora cada segundo
         function actualizarHora() {
             const ahora = new Date();
             const opciones = { 
@@ -247,6 +262,7 @@
         setInterval(actualizarHora, 1000);
         actualizarHora();
         
+        // Permitir buscar con Enter
         document.getElementById('aulaInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') consultarAula();
         });
@@ -257,6 +273,7 @@
             const result = document.getElementById('result');
             const error = document.getElementById('error');
             
+            // Limpiar resultados anteriores
             result.style.display = 'none';
             error.style.display = 'none';
             
@@ -265,17 +282,26 @@
                 return;
             }
             
+            // Mostrar loader
             loader.classList.add('active');
             
             try {
                 const url = `${API_URL}?aula=${encodeURIComponent(aulaInput)}`;
-                const response = await fetch(url);
+                console.log('Consultando:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
-                    throw new Error(`Error ${response.status}`);
+                    throw new Error(`Error ${response.status}: No se pudo conectar`);
                 }
                 
                 const datos = await response.json();
+                console.log('Datos recibidos:', datos);
                 
                 if (datos.error) {
                     mostrarError(datos.mensaje);
@@ -294,7 +320,8 @@
                 }
                 
             } catch (err) {
-                mostrarError(`Error al consultar: ${err.message}`);
+                console.error('Error completo:', err);
+                mostrarError(`Error: ${err.message}. Intenta abrir esta página directamente en Safari.`);
             } finally {
                 loader.classList.remove('active');
             }
