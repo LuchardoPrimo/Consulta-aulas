@@ -241,7 +241,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyq5DJuko_W6ksG0GSvfj7WIeFWDIdaXh-H6AUXUHrrwNXnRZdxRPIX-xXDeU7gp6_Z/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxj6H-1bSKYdClBPkS59zNR4OSn0YjtFcTW71rnxs5KPajf4agTdTPCiuWiEyyWHBFt/exec';
         
         // Actualizar hora cada segundo
         function actualizarHora() {
@@ -265,6 +265,11 @@
         // Permitir buscar con Enter
         document.getElementById('aulaInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') consultarAula();
+        });
+        
+        // Forzar mayúsculas en el input
+        document.getElementById('aulaInput').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
         });
         
         async function consultarAula() {
@@ -363,5 +368,7 @@
             error.style.display = 'block';
         }
     </script>
+</body>
+</html>
 </body>
 </html>
