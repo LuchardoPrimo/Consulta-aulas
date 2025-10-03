@@ -318,7 +318,10 @@
                         aula: datos.aula,
                         horario: datos.horario,
                         materia: datos.materia,
-                        docente: datos.docente
+                        docente: datos.docente,
+                        numeroClase: datos.numeroClase,
+                        tipoCursada: datos.tipoCursada,
+                        aulasAdicionales: datos.aulasAdicionales
                     });
                 } else {
                     mostrarResultado(false, { aula: datos.aula });
@@ -337,15 +340,27 @@
             result.className = 'result ' + (ocupada ? 'ocupada' : 'libre');
             
             if (ocupada) {
+                // NUEVO: Construir HTML de aulas adicionales
+                let aulasAdicionalesHTML = '';
+                if (datos.aulasAdicionales && datos.aulasAdicionales.length > 0) {
+                    aulasAdicionalesHTML = '<br><br><strong>🏫 Otras aulas de esta clase:</strong><br>';
+                    datos.aulasAdicionales.forEach(aula => {
+                        aulasAdicionalesHTML += `<span style="display: inline-block; background: rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 8px; margin: 3px;">→ ${aula.aula}${aula.tipo ? ' (' + aula.tipo + ')' : ''}</span><br>`;
+                    });
+                }
+                
                 result.innerHTML = `
                     <div class="result-title">
                         🔴 AULA OCUPADA
                     </div>
                     <div class="result-info">
                         <strong>Aula:</strong> ${datos.aula}<br>
+                        <strong>Clase N°:</strong> ${datos.numeroClase || 'N/A'}<br>
+                        <strong>Tipo:</strong> ${datos.tipoCursada || 'N/A'}<br>
                         <strong>Horario:</strong> ${datos.horario}<br>
                         <strong>Materia:</strong> ${datos.materia}<br>
                         <strong>Docente:</strong> ${datos.docente}
+                        ${aulasAdicionalesHTML}
                     </div>
                 `;
             } else {
