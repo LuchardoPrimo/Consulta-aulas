@@ -223,7 +223,7 @@
         <p class="subtitle">Verifica disponibilidad en tiempo real</p>
         
         <div class="info-box">
-            💡 <strong>Importante:</strong> Consultoneitor.
+            💡 <strong>Importante:</strong> Aulas Subsuelo primero va S despues el numero de aula.
         </div>
         
         <div class="input-group">
@@ -364,13 +364,18 @@
                     });
                 }
                 
+                // Determinar si es reserva particular
+                const numeroClaseStr = datos.numeroClase ? datos.numeroClase.toString().trim() : '';
+                const esReservaParticular = numeroClaseStr === '-' || numeroClaseStr === '';
+                const claseTexto = esReservaParticular ? '🔒 Reserva Particular' : datos.numeroClase || 'N/A';
+                
                 result.innerHTML = `
                     <div class="result-title">
                         🔴 AULA OCUPADA
                     </div>
                     <div class="result-info">
                         <strong>Aula:</strong> ${datos.aula}<br>
-                        <strong>Clase N°:</strong> ${datos.numeroClase || 'N/A'}<br>
+                        <strong>Clase N°:</strong> ${claseTexto}<br>
                         <strong>Tipo:</strong> ${datos.tipoCursada || 'N/A'}<br>
                         <strong>Horario:</strong> ${datos.horario}<br>
                         <strong>Materia:</strong> ${datos.materia}<br>
