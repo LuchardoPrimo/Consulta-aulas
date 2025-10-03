@@ -206,6 +206,15 @@
             font-size: 13px;
             color: #1e40af;
         }
+        
+        .aula-card {
+            display: inline-block;
+            background: rgba(255,255,255,0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 5px 3px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -340,12 +349,18 @@
             result.className = 'result ' + (ocupada ? 'ocupada' : 'libre');
             
             if (ocupada) {
-                // NUEVO: Construir HTML de aulas adicionales
+                // Construir HTML de aulas adicionales con estado
                 let aulasAdicionalesHTML = '';
                 if (datos.aulasAdicionales && datos.aulasAdicionales.length > 0) {
                     aulasAdicionalesHTML = '<br><br><strong>🏫 Otras aulas de esta clase:</strong><br>';
                     datos.aulasAdicionales.forEach(aula => {
-                        aulasAdicionalesHTML += `<span style="display: inline-block; background: rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 8px; margin: 3px;">→ ${aula.aula}${aula.tipo ? ' (' + aula.tipo + ')' : ''}</span><br>`;
+                        aulasAdicionalesHTML += `
+                            <div class="aula-card">
+                                ${aula.estado} <strong>${aula.aula}</strong>
+                                ${aula.tipo ? ' (' + aula.tipo + ')' : ''}<br>
+                                <small>${aula.horario}</small>
+                            </div>
+                        `;
                     });
                 }
                 
