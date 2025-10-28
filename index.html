@@ -215,100 +215,6 @@
             margin: 5px 3px;
             font-size: 13px;
         }
-
-        /* Estilos para el sistema de reportes */
-        .report-section {
-            margin-top: 20px;
-            display: none;
-            animation: slideIn 0.3s ease;
-        }
-
-        .report-button {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            padding: 14px;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .report-button:hover {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-        }
-
-        .report-form {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 12px;
-            border: 2px solid #e5e7eb;
-            display: none;
-        }
-
-        .report-form.active {
-            display: block;
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 15px;
-            margin-bottom: 15px;
-            background: white;
-            cursor: pointer;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .button-group button {
-            flex: 1;
-        }
-
-        .cancel-button {
-            background: #6b7280;
-        }
-
-        .cancel-button:hover {
-            background: #9ca3af;
-        }
-
-        .submit-button {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-
-        .submit-button:hover {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-        }
-
-        .success-message {
-            background: #d1fae5;
-            border: 2px solid #10b981;
-            color: #059669;
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 15px;
-            display: none;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .report-info {
-            color: #6b7280;
-            font-size: 13px;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #fef3c7;
-            border-radius: 8px;
-            border: 1px solid #fbbf24;
-        }
     </style>
 </head>
 <body>
@@ -317,7 +223,7 @@
         <p class="subtitle">Verifica disponibilidad en tiempo real</p>
         
         <div class="info-box">
-            💡 <strong>Importante:</strong> Consultoneitor con sistema de reportes.
+            💡 <strong>Importante:</strong> Consultoneitor.
         </div>
         
         <div class="input-group">
@@ -340,50 +246,11 @@
         <div class="result" id="result"></div>
         <div class="error" id="error"></div>
         
-        <!-- Nueva sección de reportes -->
-        <div class="report-section" id="reportSection">
-            <button class="report-button" onclick="mostrarFormularioReporte()">
-                🚨 REPORTAR SITUACIÓN
-            </button>
-            
-            <div class="report-form" id="reportForm">
-                <div class="report-info">
-                    ⚠️ Reportando aula: <strong id="aulaReportada"></strong>
-                </div>
-                
-                <label for="motivoReporte">Motivo del reporte:</label>
-                <select id="motivoReporte">
-                    <option value="">-- Selecciona un motivo --</option>
-                    <option value="Docente sin alumnos">Docente sin alumnos</option>
-                    <option value="Alumnos retirándose">Alumnos retirándose</option>
-                    <option value="Alumnos sin Docente">Alumnos sin Docente</option>
-                    <option value="Aula Vacía">Aula Vacía</option>
-                    <option value="Docente con muy pocos alumnos">Docente con muy pocos alumnos</option>
-                </select>
-                
-                <div class="button-group">
-                    <button class="cancel-button" onclick="cancelarReporte()">
-                        ❌ Cancelar
-                    </button>
-                    <button class="submit-button" onclick="enviarReporte()">
-                        ✅ Enviar Reporte
-                    </button>
-                </div>
-            </div>
-            
-            <div class="success-message" id="successMessage">
-                ✅ Reporte enviado exitosamente
-            </div>
-        </div>
-        
         <div class="time-info" id="timeInfo"></div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxLSgcC3oiwhKZOVeBnMiXfqMVnedNpU8YPx9nr6ZsD8B4jgNztIlmOKmAGmLf5FnpN/exec';
-        
-        // Variables globales para el reporte
-        let datosAulaActual = null;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyq5DJuko_W6ksG0GSvfj7WIeFWDIdaXh-H6AUXUHrrwNXnRZdxRPIX-xXDeU7gp6_Z/exec';
         
         // Actualizar hora cada segundo
         function actualizarHora() {
@@ -419,13 +286,10 @@
             const loader = document.getElementById('loader');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
-            const reportSection = document.getElementById('reportSection');
             
             // Limpiar resultados anteriores
             result.style.display = 'none';
             error.style.display = 'none';
-            reportSection.style.display = 'none';
-            ocultarFormularioReporte();
             
             if (!aulaInput) {
                 mostrarError('Por favor ingresa un código de aula');
@@ -453,12 +317,6 @@
                 const datos = await response.json();
                 console.log('Datos recibidos:', datos);
                 
-                // Guardar datos para el reporte
-                datosAulaActual = {
-                    aula: aulaInput,
-                    ...datos
-                };
-                
                 if (datos.error) {
                     mostrarError(datos.mensaje);
                     return;
@@ -477,10 +335,6 @@
                 } else {
                     mostrarResultado(false, { aula: datos.aula });
                 }
-                
-                // Mostrar sección de reportes después de una búsqueda exitosa
-                reportSection.style.display = 'block';
-                document.getElementById('aulaReportada').textContent = aulaInput;
                 
             } catch (err) {
                 console.error('Error completo:', err);
@@ -547,101 +401,6 @@
             const error = document.getElementById('error');
             error.textContent = '⚠️ ' + mensaje;
             error.style.display = 'block';
-        }
-        
-        // Funciones del sistema de reportes
-        function mostrarFormularioReporte() {
-            const reportForm = document.getElementById('reportForm');
-            const reportButton = document.querySelector('.report-button');
-            const successMessage = document.getElementById('successMessage');
-            
-            reportForm.classList.add('active');
-            reportButton.style.display = 'none';
-            successMessage.style.display = 'none';
-            document.getElementById('motivoReporte').value = '';
-        }
-        
-        function ocultarFormularioReporte() {
-            const reportForm = document.getElementById('reportForm');
-            const reportButton = document.querySelector('.report-button');
-            
-            reportForm.classList.remove('active');
-            reportButton.style.display = 'block';
-        }
-        
-        function cancelarReporte() {
-            ocultarFormularioReporte();
-        }
-        
-        async function enviarReporte() {
-            const motivo = document.getElementById('motivoReporte').value;
-            
-            if (!motivo) {
-                alert('Por favor selecciona un motivo para el reporte');
-                return;
-            }
-            
-            const loader = document.getElementById('loader');
-            loader.classList.add('active');
-            
-            try {
-                // Determinar sede según el código del aula
-                const codigoAula = datosAulaActual.aula.toUpperCase();
-                let sede = 'Desconocida';
-                
-                if (codigoAula.startsWith('U')) {
-                    sede = 'UADE';
-                } else if (codigoAula.startsWith('B')) {
-                    sede = 'Brasil';
-                } else if (codigoAula.startsWith('P')) {
-                    sede = 'Pinamar';
-                } else if (codigoAula.startsWith('L')) {
-                    sede = 'Lima';
-                }
-                
-                // Preparar datos del reporte
-                const datosReporte = {
-                    aula: datosAulaActual.aula,
-                    motivo: motivo,
-                    sede: sede,
-                    estadoAula: datosAulaActual.ocupada ? 'Ocupada' : 'Libre',
-                    materia: datosAulaActual.materia || 'N/A',
-                    docente: datosAulaActual.docente || 'N/A'
-                };
-                
-                console.log('Enviando reporte:', datosReporte);
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(datosReporte)
-                });
-                
-                // Como usamos no-cors, no podemos leer la respuesta
-                // Asumimos que fue exitoso
-                console.log('Reporte enviado');
-                
-                // Mostrar mensaje de éxito
-                const successMessage = document.getElementById('successMessage');
-                successMessage.style.display = 'block';
-                
-                // Ocultar formulario
-                ocultarFormularioReporte();
-                
-                // Ocultar mensaje de éxito después de 3 segundos
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 3000);
-                
-            } catch (err) {
-                console.error('Error al enviar reporte:', err);
-                alert('Error al enviar el reporte. Por favor intenta nuevamente.');
-            } finally {
-                loader.classList.remove('active');
-            }
         }
     </script>
 </body>
