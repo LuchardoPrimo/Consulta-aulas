@@ -59,17 +59,20 @@
             font-size: 14px;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 15px;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             font-size: 16px;
             transition: all 0.3s;
+        }
+        
+        input {
             text-transform: uppercase;
         }
         
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -86,6 +89,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
         }
         
         button:active {
@@ -95,6 +99,10 @@
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        
+        .btn-reportar {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         }
         
         .result {
@@ -215,6 +223,46 @@
             margin: 5px 3px;
             font-size: 13px;
         }
+        
+        .reporte-form {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .reporte-form.active {
+            display: block;
+        }
+        
+        .reporte-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 15px;
+        }
+        
+        .btn-enviar-reporte {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            margin-top: 10px;
+        }
+        
+        .btn-cancelar {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+        
+        .success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -223,7 +271,7 @@
         <p class="subtitle">Verifica disponibilidad en tiempo real</p>
         
         <div class="info-box">
-            💡 <strong>Importante:</strong> Aulas Subsuelo primero va S despues el numero de aula.
+            💡 <strong>Importante:</strong> Consultoneitor.
         </div>
         
         <div class="input-group">
@@ -231,12 +279,13 @@
             <input 
                 type="text" 
                 id="aulaInput" 
-                placeholder="Ej: U105, B006, P001"
+                placeholder="Ej: U105, B006, P001, S244"
                 autocomplete="off"
             >
         </div>
         
         <button onclick="consultarAula()">🔍 Consultar Ahora</button>
+        <button class="btn-reportar" onclick="mostrarFormReporte()">⚠️ REPORTAR</button>
         
         <div class="loader" id="loader">
             <div class="spinner"></div>
@@ -245,12 +294,45 @@
         
         <div class="result" id="result"></div>
         <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+        
+        <!-- Formulario de Reporte -->
+        <div class="reporte-form" id="reporteForm">
+            <div class="reporte-title">📝 Reportar Incidencia</div>
+            
+            <div class="input-group">
+                <label for="reporteAula">Aula a Reportar</label>
+                <input 
+                    type="text" 
+                    id="reporteAula" 
+                    placeholder="Ej: U105, B006, P001, S244"
+                    autocomplete="off"
+                >
+            </div>
+            
+            <div class="input-group">
+                <label for="reporteMotivo">Motivo del Reporte</label>
+                <select id="reporteMotivo">
+                    <option value="">Selecciona un motivo...</option>
+                    <option value="Docente sin alumnos">Docente sin alumnos</option>
+                    <option value="Alumnos retirándose">Alumnos retirándose</option>
+                    <option value="Alumnos sin Docente">Alumnos sin Docente</option>
+                    <option value="Aula Vacía">Aula Vacía</option>
+                    <option value="Docente con muy pocos alumnos">Docente con muy pocos alumnos</option>
+                </select>
+            </div>
+            
+            <button class="btn-enviar-reporte" onclick="enviarReporte()">✅ Enviar Reporte</button>
+            <button class="btn-cancelar" onclick="ocultarFormReporte()">✖️ Cancelar</button>
+        </div>
         
         <div class="time-info" id="timeInfo"></div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxjpJ3RbVap8RTEe9yCgMngewUyK0UF306b51MZopkf7EF4s3RU3iIBix_mEFtOTgob/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyq5DJuko_W6ksG0GSvfj7WIeFWDIdaXh-H6AUXUHrrwNXnRZdxRPIX-xXDeU7gp6_Z/exec';
+        
+        let ultimaConsulta = null; // Para guardar datos de la última consulta
         
         // Actualizar hora cada segundo
         function actualizarHora() {
@@ -276,8 +358,12 @@
             if (e.key === 'Enter') consultarAula();
         });
         
-        // Forzar mayúsculas en el input
+        // Forzar mayúsculas en los inputs
         document.getElementById('aulaInput').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        document.getElementById('reporteAula').addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
         
@@ -286,21 +372,44 @@
             const loader = document.getElementById('loader');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
+            const success = document.getElementById('success');
             
             // Limpiar resultados anteriores
             result.style.display = 'none';
             error.style.display = 'none';
+            success.style.display = 'none';
             
             if (!aulaInput) {
                 mostrarError('Por favor ingresa un código de aula');
                 return;
             }
             
+            // Extraer sede del código del aula
+            const primeraLetra = aulaInput.charAt(0);
+            let sede = '';
+            let codigoAulaSinSede = aulaInput;
+            
+            if (primeraLetra === 'P') {
+                sede = 'Pinamar';
+                codigoAulaSinSede = aulaInput.substring(1);
+            } else if (primeraLetra === 'B') {
+                sede = 'Belgrano';
+                codigoAulaSinSede = aulaInput.substring(1);
+            } else if (primeraLetra === 'U') {
+                sede = 'Recoleta';
+                codigoAulaSinSede = aulaInput.substring(1);
+            } else if (primeraLetra === 'S') {
+                sede = 'Subsuelo';
+                codigoAulaSinSede = aulaInput.substring(1);
+            } else {
+                sede = 'Principal';
+            }
+            
             // Mostrar loader
             loader.classList.add('active');
             
             try {
-                const url = `${API_URL}?aula=${encodeURIComponent(aulaInput)}`;
+                const url = `${API_URL}?aula=${encodeURIComponent(codigoAulaSinSede)}`;
                 console.log('Consultando:', url);
                 
                 const response = await fetch(url, {
@@ -322,6 +431,15 @@
                     return;
                 }
                 
+                // Guardar datos de la consulta para el reporte
+                ultimaConsulta = {
+                    aula: aulaInput,
+                    sede: sede,
+                    ocupada: datos.ocupada,
+                    materia: datos.materia || '',
+                    docente: datos.docente || ''
+                };
+                
                 if (datos.ocupada) {
                     mostrarResultado(true, {
                         aula: datos.aula,
@@ -330,10 +448,11 @@
                         docente: datos.docente,
                         numeroClase: datos.numeroClase,
                         tipoCursada: datos.tipoCursada,
-                        aulasAdicionales: datos.aulasAdicionales
+                        aulasAdicionales: datos.aulasAdicionales,
+                        sede: sede
                     });
                 } else {
-                    mostrarResultado(false, { aula: datos.aula });
+                    mostrarResultado(false, { aula: aulaInput, sede: sede });
                 }
                 
             } catch (err) {
@@ -374,6 +493,7 @@
                         🔴 AULA OCUPADA
                     </div>
                     <div class="result-info">
+                        <strong>Sede:</strong> ${datos.sede}<br>
                         <strong>Aula:</strong> ${datos.aula}<br>
                         <strong>Clase N°:</strong> ${claseTexto}<br>
                         <strong>Tipo:</strong> ${datos.tipoCursada || 'N/A'}<br>
@@ -389,6 +509,7 @@
                         ✅ AULA DISPONIBLE
                     </div>
                     <div class="result-info">
+                        <strong>Sede:</strong> ${datos.sede}<br>
                         El aula <strong>${datos.aula}</strong> está libre en este momento
                     </div>
                 `;
@@ -401,6 +522,106 @@
             const error = document.getElementById('error');
             error.textContent = '⚠️ ' + mensaje;
             error.style.display = 'block';
+        }
+        
+        function mostrarExito(mensaje) {
+            const success = document.getElementById('success');
+            success.textContent = '✅ ' + mensaje;
+            success.style.display = 'block';
+            setTimeout(() => {
+                success.style.display = 'none';
+            }, 5000);
+        }
+        
+        function mostrarFormReporte() {
+            const form = document.getElementById('reporteForm');
+            form.classList.add('active');
+            
+            // Auto-llenar el aula si hay una consulta previa
+            if (ultimaConsulta) {
+                document.getElementById('reporteAula').value = ultimaConsulta.aula;
+            }
+        }
+        
+        function ocultarFormReporte() {
+            const form = document.getElementById('reporteForm');
+            form.classList.remove('active');
+            document.getElementById('reporteAula').value = '';
+            document.getElementById('reporteMotivo').value = '';
+        }
+        
+        async function enviarReporte() {
+            const aulaReporte = document.getElementById('reporteAula').value.trim().toUpperCase();
+            const motivoReporte = document.getElementById('reporteMotivo').value;
+            const error = document.getElementById('error');
+            const loader = document.getElementById('loader');
+            
+            error.style.display = 'none';
+            
+            if (!aulaReporte) {
+                mostrarError('Por favor ingresa el código del aula');
+                return;
+            }
+            
+            if (!motivoReporte) {
+                mostrarError('Por favor selecciona un motivo');
+                return;
+            }
+            
+            // Extraer sede
+            const primeraLetra = aulaReporte.charAt(0);
+            let sede = '';
+            
+            if (primeraLetra === 'P') {
+                sede = 'Pinamar';
+            } else if (primeraLetra === 'B') {
+                sede = 'Belgrano';
+            } else if (primeraLetra === 'U') {
+                sede = 'Recoleta';
+            } else if (primeraLetra === 'S') {
+                sede = 'Subsuelo';
+            } else {
+                sede = 'Principal';
+            }
+            
+            loader.classList.add('active');
+            
+            try {
+                const datosReporte = {
+                    aula: aulaReporte,
+                    motivo: motivoReporte,
+                    sede: sede,
+                    estadoAula: ultimaConsulta && ultimaConsulta.aula === aulaReporte ? 
+                        (ultimaConsulta.ocupada ? 'Ocupada' : 'Libre') : 'Desconocido',
+                    materia: ultimaConsulta && ultimaConsulta.aula === aulaReporte ? 
+                        ultimaConsulta.materia : '',
+                    docente: ultimaConsulta && ultimaConsulta.aula === aulaReporte ? 
+                        ultimaConsulta.docente : ''
+                };
+                
+                console.log('Enviando reporte:', datosReporte);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(datosReporte)
+                });
+                
+                const resultado = await response.json();
+                console.log('Respuesta:', resultado);
+                
+                if (resultado.error) {
+                    mostrarError(resultado.mensaje);
+                } else {
+                    mostrarExito('¡Reporte enviado correctamente!');
+                    ocultarFormReporte();
+                }
+                
+            } catch (err) {
+                console.error('Error:', err);
+                mostrarError('Error al enviar el reporte. Intenta nuevamente.');
+            } finally {
+                loader.classList.remove('active');
+            }
         }
     </script>
 </body>
