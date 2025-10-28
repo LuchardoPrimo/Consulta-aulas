@@ -334,7 +334,7 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyq5DJuko_W6ksG0GSvfj7WIeFWDIdaXh-H6AUXUHrrwNXnRZdxRPIX-xXDeU7gp6_Z/exec';
         
-        let ultimaConsulta = null; // Para guardar todos los datos de la última consulta
+        let ultimaConsulta = null;
         
         // Actualizar hora cada segundo
         function actualizarHora() {
@@ -386,34 +386,37 @@
                 return;
             }
             
-           // Extraer sede del código del aula
-const primeraLetra = aulaInput.charAt(0);
-let sede = '';
-let codigoAulaSinSede = aulaInput;
-
-if (primeraLetra === 'P') {
-    sede = 'Pinamar';
-    codigoAulaSinSede = aulaInput.substring(1);
-} else if (primeraLetra === 'B') {
-    sede = 'Belgrano';
-    codigoAulaSinSede = aulaInput.substring(1);
-} else if (primeraLetra === 'U') {
-    sede = 'Recoleta';
-    codigoAulaSinSede = aulaInput.substring(1);
-} else if (primeraLetra === 'S') {
-    sede = 'Subsuelo';
-    // MANTENER la "s" pero en minúscula
-    codigoAulaSinSede = 's' + aulaInput.substring(1).toLowerCase();
-} else {
-    sede = 'Principal';
-}
+            // Extraer sede del código del aula
+            const primeraLetra = aulaInput.charAt(0);
+            let sede = '';
+            let codigoAulaBuscar = '';
+            
+            if (primeraLetra === 'P') {
+                sede = 'Pinamar';
+                codigoAulaBuscar = aulaInput.substring(1).toLowerCase();
+            } else if (primeraLetra === 'B') {
+                sede = 'Belgrano';
+                codigoAulaBuscar = aulaInput.substring(1).toLowerCase();
+            } else if (primeraLetra === 'U') {
+                sede = 'Recoleta';
+                codigoAulaBuscar = aulaInput.substring(1).toLowerCase();
+            } else if (primeraLetra === 'S') {
+                sede = 'Subsuelo';
+                // MANTENER la "s" en minúscula
+                codigoAulaBuscar = 's' + aulaInput.substring(1).toLowerCase();
+            } else {
+                sede = 'Principal';
+                codigoAulaBuscar = aulaInput.toLowerCase();
+            }
+            
+            console.log('Buscando aula:', codigoAulaBuscar);
             
             // Mostrar loader
             loader.classList.add('active');
             
             try {
-                const url = `${API_URL}?aula=${encodeURIComponent(codigoAulaSinSede)}`;
-                console.log('Consultando:', url);
+                const url = `${API_URL}?aula=${encodeURIComponent(codigoAulaBuscar)}`;
+                console.log('URL completa:', url);
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -437,7 +440,7 @@ if (primeraLetra === 'P') {
                 // Guardar TODOS los datos de la consulta para el reporte
                 ultimaConsulta = {
                     aula: aulaInput,
-                    aulaSinPrefijo: datos.aula || codigoAulaSinSede,
+                    aulaSinPrefijo: datos.aula || codigoAulaBuscar,
                     sede: sede,
                     ocupada: datos.ocupada,
                     horario: datos.horario || '',
@@ -498,18 +501,11 @@ if (primeraLetra === 'P') {
                 const esReservaParticular = numeroClaseStr === '-' || numeroClaseStr === '';
                 const claseTexto = esReservaParticular ? '🔒 Reserva Particular' : datos.numeroClase || 'N/A';
                 
-                // Solo mostrar sede si NO es Principal
-                let sedeHTML = '';
-                if (datos.sede && datos.sede !== 'Principal') {
-                    sedeHTML = `<strong>Sede:</strong> ${datos.sede}<br>`;
-                }
-                
                 result.innerHTML = `
                     <div class="result-title">
                         🔴 AULA OCUPADA
                     </div>
                     <div class="result-info">
-                        ${sedeHTML}
                         <strong>Aula:</strong> ${datos.aula}<br>
                         <strong>Clase N°:</strong> ${claseTexto}<br>
                         <strong>Tipo:</strong> ${datos.tipoCursada || 'N/A'}<br>
@@ -520,18 +516,11 @@ if (primeraLetra === 'P') {
                     </div>
                 `;
             } else {
-                // Solo mostrar sede si NO es Principal
-                let sedeHTML = '';
-                if (datos.sede && datos.sede !== 'Principal') {
-                    sedeHTML = `<strong>Sede:</strong> ${datos.sede}<br>`;
-                }
-                
                 result.innerHTML = `
                     <div class="result-title">
                         ✅ AULA DISPONIBLE
                     </div>
                     <div class="result-info">
-                        ${sedeHTML}
                         El aula <strong>${datos.aula}</strong> está libre en este momento
                     </div>
                 `;
