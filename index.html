@@ -59,17 +59,20 @@
             font-size: 14px;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 15px;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             font-size: 16px;
             transition: all 0.3s;
+        }
+        
+        input {
             text-transform: uppercase;
         }
         
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -95,6 +98,22 @@
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        
+        .btn-reportar {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        
+        .btn-enviar-reporte {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            margin-top: 15px;
+        }
+        
+        .btn-cancelar {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            margin-top: 10px;
         }
         
         .result {
@@ -215,6 +234,46 @@
             margin: 5px 3px;
             font-size: 13px;
         }
+        
+        /* Estilos para el sistema de reportes */
+        .reporte-section {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .reporte-section.active {
+            display: block;
+        }
+        
+        .reporte-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .success-message {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .success-message.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -246,11 +305,43 @@
         <div class="result" id="result"></div>
         <div class="error" id="error"></div>
         
+        <!-- Botón de reportar (aparece después de consultar) -->
+        <button class="btn-reportar" id="btnReportar" style="display: none;" onclick="mostrarFormReporte()">
+            📋 REPORTAR
+        </button>
+        
+        <!-- Sección de reporte -->
+        <div class="reporte-section" id="reporteSection">
+            <div class="reporte-title">📝 Enviar Reporte</div>
+            
+            <div class="input-group">
+                <label for="motivoReporte">Selecciona el motivo:</label>
+                <select id="motivoReporte">
+                    <option value="">-- Seleccionar motivo --</option>
+                    <option value="Docente sin alumnos">Docente sin alumnos</option>
+                    <option value="Alumnos retirándose">Alumnos retirándose</option>
+                    <option value="Alumnos sin Docente">Alumnos sin Docente</option>
+                    <option value="Aula Vacía">Aula Vacía</option>
+                    <option value="Docente con muy pocos alumnos">Docente con muy pocos alumnos</option>
+                </select>
+            </div>
+            
+            <button class="btn-enviar-reporte" onclick="enviarReporte()">✅ Enviar Reporte</button>
+            <button class="btn-cancelar" onclick="cancelarReporte()">❌ Cancelar</button>
+        </div>
+        
+        <div class="success-message" id="successMessage">
+            ✅ Reporte enviado correctamente
+        </div>
+        
         <div class="time-info" id="timeInfo"></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxLSgcC3oiwhKZOVeBnMiXfqMVnedNpU8YPx9nr6ZsD8B4jgNztIlmOKmAGmLf5FnpN/exec';
+        
+        // Variable para guardar los datos de la última consulta
+        let ultimaConsulta = null;
     
         // Actualizar hora cada segundo
         function actualizarHora() {
@@ -286,10 +377,16 @@
             const loader = document.getElementById('loader');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
+            const btnReportar = document.getElementById('btnReportar');
+            const reporteSection = document.getElementById('reporteSection');
+            const successMessage = document.getElementById('successMessage');
             
             // Limpiar resultados anteriores
             result.style.display = 'none';
             error.style.display = 'none';
+            btnReportar.style.display = 'none';
+            reporteSection.classList.remove('active');
+            successMessage.classList.remove('active');
             
             if (!aulaInput) {
                 mostrarError('Por favor ingresa un código de aula');
@@ -322,6 +419,9 @@
                     return;
                 }
                 
+                // Guardar los datos de la última consulta para el reporte
+                ultimaConsulta = datos;
+                
                 if (datos.ocupada) {
                     mostrarResultado(true, {
                         aula: datos.aula,
@@ -335,6 +435,9 @@
                 } else {
                     mostrarResultado(false, { aula: datos.aula });
                 }
+                
+                // Mostrar botón de reportar después de consultar
+                btnReportar.style.display = 'block';
                 
             } catch (err) {
                 console.error('Error completo:', err);
@@ -401,6 +504,109 @@
             const error = document.getElementById('error');
             error.textContent = '⚠️ ' + mensaje;
             error.style.display = 'block';
+        }
+        
+        // Funciones para el sistema de reportes
+        function mostrarFormReporte() {
+            const reporteSection = document.getElementById('reporteSection');
+            const successMessage = document.getElementById('successMessage');
+            
+            // Ocultar mensaje de éxito si estaba visible
+            successMessage.classList.remove('active');
+            
+            // Resetear el select
+            document.getElementById('motivoReporte').value = '';
+            
+            // Mostrar formulario
+            reporteSection.classList.add('active');
+            
+            // Scroll suave hacia el formulario
+            reporteSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function cancelarReporte() {
+            const reporteSection = document.getElementById('reporteSection');
+            reporteSection.classList.remove('active');
+        }
+        
+        async function enviarReporte() {
+            const motivo = document.getElementById('motivoReporte').value;
+            
+            if (!motivo) {
+                alert('⚠️ Por favor selecciona un motivo para el reporte');
+                return;
+            }
+            
+            if (!ultimaConsulta) {
+                alert('⚠️ Error: No hay datos de consulta disponibles');
+                return;
+            }
+            
+            // Preparar datos del reporte
+            const datosReporte = {
+                aula: ultimaConsulta.aula || '',
+                motivo: motivo,
+                sede: extraerSede(ultimaConsulta.aula),
+                estadoAula: ultimaConsulta.ocupada ? 'OCUPADA' : 'LIBRE',
+                materia: ultimaConsulta.materia || '',
+                docente: ultimaConsulta.docente || ''
+            };
+            
+            console.log('Enviando reporte:', datosReporte);
+            
+            // Mostrar loader
+            const loader = document.getElementById('loader');
+            loader.classList.add('active');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Importante para Google Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(datosReporte)
+                });
+                
+                // Con no-cors no podemos leer la respuesta, pero si llega aquí sin error, asumimos que funcionó
+                console.log('Reporte enviado');
+                
+                // Ocultar formulario y mostrar mensaje de éxito
+                const reporteSection = document.getElementById('reporteSection');
+                const successMessage = document.getElementById('successMessage');
+                
+                reporteSection.classList.remove('active');
+                successMessage.classList.add('active');
+                
+                // Ocultar mensaje después de 5 segundos
+                setTimeout(() => {
+                    successMessage.classList.remove('active');
+                }, 5000);
+                
+            } catch (error) {
+                console.error('Error al enviar reporte:', error);
+                alert('⚠️ Error al enviar el reporte. Por favor intenta nuevamente.');
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // Función auxiliar para extraer la sede del código de aula
+        function extraerSede(aula) {
+            if (!aula) return 'N/A';
+            
+            const codigo = aula.split('-')[0].trim();
+            const primeraLetra = codigo.charAt(0).toUpperCase();
+            
+            const sedes = {
+                'U': 'Urquiza',
+                'B': 'Bartolomé Mitre',
+                'P': 'Pacheco',
+                'C': 'Centro',
+                'M': 'Munro'
+            };
+            
+            return sedes[primeraLetra] || 'N/A';
         }
     </script>
 </body>
